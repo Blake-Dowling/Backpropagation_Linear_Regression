@@ -1,6 +1,5 @@
 from tkinter import *
 import time
-import math
 import random
 import numpy as np
 import embed_plot
@@ -10,7 +9,6 @@ import draw_network
 WIDTH_IN_CELLS = 16
 CELL_SIZE = 40
 HALF_SCREEN = (WIDTH_IN_CELLS / 4) * CELL_SIZE
-ADJUSTMENT_PRECISION = .5
 ##############################Initialize Tkinter Window##############################
 window = Tk()
 window.resizable(False, False)
@@ -54,40 +52,41 @@ mseBI = canvas.create_text(HALF_SCREEN * 3, 3 * CELL_SIZE, text = "MSE Increase 
 mseBD = canvas.create_text(HALF_SCREEN * 3, 4 * CELL_SIZE, text = "MSE Decrease Bias: " + str(mseBest)) #Display MSE with bias decrease
 
 ##############################Function for testing a guess parameter##############################
-def testParams(weight, bias):
+def testParams(weight, bias, i):
         totalSquaredError = 0
         mse = 100
-        for i in range(len(inputVector)): #For each input
-            ##############################Calculate Expected and Guess Values##############################
-            input = inputVector[i] #The current input iterated over
-            actualResult = yVector[i] #The training data result
-            guessResult = (input * weight) + bias #Algorithm guess
-            ##############################Calculate Error##############################
-            squaredError = (guessResult - actualResult)**2 #Error between guess and training data
-            totalSquaredError = totalSquaredError + squaredError #Cumulative error
-            mse = totalSquaredError / (i+1) #Mean error
-            ##############################Draw Guess Line##############################
-            newPoint, = plot.plot(input, guessResult, "ro") #Draw new point for current guess
-            newLine, = plot.plot([0, input, 10], 
+        #for i in range(len(inputVector)): #For each input
+        ##############################Calculate Expected and Guess Values##############################
+        input = inputVector[i] #The current input iterated over
+        actualResult = yVector[i] #The training data result
+        guessResult = (input * weight) + bias #Algorithm guess
+        ##############################Calculate Error##############################
+        squaredError = (guessResult - actualResult)**2 #Error between guess and training data
+        totalSquaredError = totalSquaredError + squaredError #Cumulative error
+        mse = totalSquaredError / (i+1) #Mean error
+        ##############################Draw Guess Line##############################
+        newPoint, = plot.plot(input, guessResult, "ro") #Draw new point for current guess
+        newLine, = plot.plot([0, input, 10], 
                                  [0 + bias, guessResult, 10 * weight + bias], 
                                  color = "red") #Draw new line for current guess
-            plotCanvas.draw()
-            canvas.update()
-            newPoint.remove()
-            newLine.remove()
+        plotCanvas.draw()
+        canvas.update()
+        newPoint.remove()
+        newLine.remove()
         return mse
 ##############################Main Guess Loop##############################
-iterations = 0
+guessIndex = 0
 while True:
-    iterations = iterations + 1
+    guessIndex = (guessIndex + 1) % 10
+    print(guessIndex)
     ##############################Guess Parameters##############################
-    mseWeightIncrease = testParams(weight + ADJUSTMENT_PRECISION, bias)
+    mseWeightIncrease = testParams(weight + .1, bias, guessIndex)
     canvas.itemconfig(mseWI, text = "MSE Increase Weight: " + str(mseWeightIncrease)) #Display MSE with weight increase
-    mseWeightDecrease = testParams(weight - ADJUSTMENT_PRECISION, bias)
+    mseWeightDecrease = testParams(weight - .1, bias, guessIndex)
     canvas.itemconfig(mseWD, text = "MSE Decrease Weight: " + str(mseWeightDecrease)) #Display MSE with weight decrease
-    mseBiasIncrease = testParams(weight, bias + 2 * ADJUSTMENT_PRECISION)
+    mseBiasIncrease = testParams(weight, bias + .1, guessIndex)
     canvas.itemconfig(mseBI, text = "MSE Increase Bias: " + str(mseBiasIncrease)) #Display MSE with bias increase
-    mseBiasDecrease = testParams(weight, bias - 2 * ADJUSTMENT_PRECISION)
+    mseBiasDecrease = testParams(weight, bias - .1, guessIndex)
     canvas.itemconfig(mseBD, text = "MSE Decrease Bias: " + str(mseBiasDecrease)) #Display MSE with bias decrease
     canvas.update()
     ##############################Determine Best Guess##############################
@@ -95,19 +94,19 @@ while True:
     ##############################If MSE cannot be improved, stop program##############################
     if mseBestGuess >= mseBest:
         break
-    ##############################Update Best MSE, label, and Precision##############################
+    ##############################Update Best MSE and Label##############################
     mseBest = mseBestGuess
     canvas.itemconfig(mseText, text = "Best Mean Squared Error: " + str(mseBest))
     canvas.update()
     ##############################Change optimal parameter##############################
     if mseWeightIncrease == mseBestGuess:
-        weight = weight + ADJUSTMENT_PRECISION
+        weight = weight + .1
     elif mseWeightDecrease == mseBestGuess:
-        weight = weight - ADJUSTMENT_PRECISION
+        weight = weight - .1
     elif mseBiasIncrease == mseBestGuess:
-        bias = bias + 2 * ADJUSTMENT_PRECISION
+        bias = bias + .1
     elif mseBiasDecrease == mseBestGuess:
-        bias = bias - 2 * ADJUSTMENT_PRECISION
+        bias = bias - .1
     ##############################Update Guess Label##############################
     guessLabel = "Best Weight: " + str(weight) + "  Best Bias: " + str(bias) + "\n" #string to guess gradient
     canvas.itemconfig(guessText, text = guessLabel) #
@@ -119,7 +118,6 @@ actualY = "Actual Y : " + str(randomGradient) + "x + " + str(randomBias)
 estimatedY = "Estimated Y : " + str(weight) + "x + " + str(bias)
 canvas.create_text(HALF_SCREEN, 4 * CELL_SIZE, text = actualY) #Display actual Y
 canvas.create_text(HALF_SCREEN, 5 * CELL_SIZE, text = estimatedY) #Display estimated Y
-canvas.create_text(HALF_SCREEN, 6 * CELL_SIZE, text = "Iterations: " + str(iterations)) #Display estimated Y
 #draw_network.displayData(canvas, 8, inputVector, "Input Data")
 #xTrain = np.array([])
 
